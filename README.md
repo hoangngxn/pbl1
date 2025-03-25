@@ -73,21 +73,191 @@ void schedule_jobs(int n, int* processing_times, int* deadlines,
 }
 ```
 
-## 4. Giao diện và Chức Năng
-### 4.1 Menu Chính
-- Nhập thủ công thông tin công việc
-- Tải dữ liệu từ file .inp
-- Thoát chương trình
+## 1. Giới Thiệu Chức Năng Hệ Thống
 
-### 4.2 Xử Lý Đầu Vào
-- Hỗ trợ nhập liệu từ bàn phím
-- Đọc file đầu vào với định dạng chuẩn
-- Kiểm tra tính hợp lệ của dữ liệu
+### 1.1 Các Chức Năng Chính
+1. **Nhập Liệu Linh Hoạt**
+   - Nhập thủ công thông tin công việc
+   - Tải dữ liệu từ file .inp
+   - Kiểm tra và xác thực dữ liệu đầu vào
 
-### 4.3 Xuất Kết Quả
-- Hiển thị số lượng công việc hoàn thành
-- Xuất danh sách công việc được thực hiện
-- Lưu kết quả vào file .out với tên chứa mốc thời gian
+2. **Xử Lý Lập Lịch**
+   - Áp dụng thuật toán tham lam để tối ưu hóa công việc
+   - Sắp xếp và chọn lọc công việc hiệu quả
+   - Tối đa hóa số lượng công việc hoàn thành đúng hạn
+
+3. **Xuất Kết Quả**
+   - Hiển thị kết quả trên màn hình
+   - Lưu kết quả vào file .out có mốc thời gian
+
+## 2. Chi Tiết Các Hàm Chức Năng
+
+### 2.1 Hàm `schedule_jobs()`
+#### Mục Đích
+Lập lịch các công việc theo nguyên tắc tham lam, ưu tiên các công việc có thể hoàn thành đúng hạn.
+
+#### Các Bước Thực Hiện
+1. **Khởi Tạo Dữ Liệu**
+   ```c
+   Job* jobs = malloc(n * sizeof(Job));
+   for (int i = 0; i < n; i++) {
+       jobs[i].job_id = i + 1;
+       jobs[i].processing_time = processing_times[i];
+       jobs[i].deadline = deadlines[i];
+   }
+   ```
+   - Chuyển đổi mảng đầu vào sang cấu trúc `Job`
+   - Gán số thứ tự, thời gian xử lý và thời hạn cho mỗi công việc
+
+2. **Sắp Xếp Công Việc**
+   ```c
+   qsort(jobs, n, sizeof(Job), compare_jobs);
+   ```
+   - Sử dụng `qsort()` để sắp xếp công việc theo thời hạn tăng dần
+   - Hàm `compare_jobs()` so sánh thời hạn của các công việc
+
+3. **Lập Lịch Tham Lam**
+   ```c
+   int current_time = 0;
+   int job_count = 0;
+   for (int i = 0; i < n; i++) {
+       if (current_time + jobs[i].processing_time <= jobs[i].deadline) {
+           schedule[job_count] = jobs[i].job_id;
+           current_time += jobs[i].processing_time;
+           job_count++;
+       }
+   }
+   ```
+   - Duyệt qua danh sách công việc đã sắp xếp
+   - Chọn các công việc có thể hoàn thành đúng hạn
+   - Cập nhật thời gian hiện tại và danh sách lịch trình
+
+### 2.2 Hàm `manual_input()`
+#### Mục Đích
+Cho phép người dùng nhập thông tin công việc trực tiếp từ bàn phím.
+
+#### Các Bước Thực Hiện
+```c
+void manual_input(int* n, int* processing_times, int* deadlines) {
+    printf("Nhập số lượng công việc: ");
+    scanf("%d", n);
+
+    printf("Nhập thời gian xử lý (cách nhau bằng khoảng trắng): ");
+    for (int i = 0; i < *n; i++) {
+        scanf("%d", &processing_times[i]);
+    }
+
+    printf("Nhập thời hạn (cách nhau bằng khoảng trắng): ");
+    for (int i = 0; i < *n; i++) {
+        scanf("%d", &deadlines[i]);
+    }
+}
+```
+- Nhập số lượng công việc
+- Nhập từng thời gian xử lý
+- Nhập từng thời hạn hoàn thành
+
+### 2.3 Hàm `load_from_file()`
+#### Mục Đích
+Đọc thông tin công việc từ file .inp với định dạng chuẩn.
+
+#### Các Bước Thực Hiện
+```c
+int load_from_file(char* filename, int* n, int* processing_times, int* deadlines) {
+    FILE* file = fopen(filename, "r");
+    // Đọc số lượng công việc
+    if (fscanf(file, "%d", n) != 1) {
+        printf("Lỗi đọc số lượng công việc\n");
+        return 0;
+    }
+
+    // Đọc thời gian xử lý
+    for (int i = 0; i < *n; i++) {
+        if (fscanf(file, "%d", &processing_times[i]) != 1) {
+            printf("Lỗi đọc thời gian xử lý\n");
+            return 0;
+        }
+    }
+
+    // Đọc thời hạn
+    for (int i = 0; i < *n; i++) {
+        if (fscanf(file, "%d", &deadlines[i]) != 1) {
+            printf("Lỗi đọc thời hạn\n");
+            return 0;
+        }
+    }
+
+    fclose(file);
+    return 1;
+}
+```
+- Mở file theo tên được cung cấp
+- Kiểm tra và đọc số lượng công việc
+- Đọc danh sách thời gian xử lý
+- Đọc danh sách thời hạn
+- Xử lý lỗi nếu định dạng file không đúng
+
+### 2.4 Hàm `save_output()`
+#### Mục Đích
+Lưu kết quả lập lịch vào file .out với tên chứa mốc thời gian.
+
+#### Các Bước Thực Hiện
+```c
+void save_output(int completed_jobs, int* schedule, int n) {
+    // Tạo tên file theo mốc thời gian
+    time_t now;
+    time(&now);
+    struct tm *local = localtime(&now);
+    char filename[50];
+    sprintf(filename, "%04d%02d%02d_%02d%02d%02d.out", 
+            local->tm_year + 1900, local->tm_mon + 1, local->tm_mday,
+            local->tm_hour, local->tm_min, local->tm_sec);
+
+    // Mở file để ghi
+    FILE* outfile = fopen(filename, "w");
+    
+    // Ghi số lượng công việc hoàn thành
+    fprintf(outfile, "%d\n", completed_jobs);
+
+    // Ghi danh sách công việc
+    for (int i = 0; i < completed_jobs; i++) {
+        fprintf(outfile, "%d ", schedule[i]);
+    }
+    fprintf(outfile, "\n");
+
+    fclose(outfile);
+}
+```
+- Tạo tên file duy nhất dựa trên thời gian hiện tại
+- Ghi số lượng công việc hoàn thành
+- Ghi danh sách thứ tự công việc
+- Đóng file sau khi ghi xong
+
+## 3. Cơ Chế Hoạt Động Tổng Thể
+
+### 3.1 Luồng Xử Lý Chính
+1. Hiển thị menu lựa chọn
+2. Người dùng chọn phương thức nhập liệu
+3. Thực thi chức năng nhập liệu tương ứng
+4. Gọi hàm `schedule_jobs()` để lập lịch
+5. Hiển thị kết quả và lưu vào file
+
+### 3.2 Quản Lý Bộ Nhớ
+- Sử dụng `malloc()` để cấp phát động
+- Giải phóng bộ nhớ bằng `free()` sau mỗi lần sử dụng
+- Tránh rò rỉ bộ nhớ
+
+## 4. Ưu Điểm Của Giải Pháp
+- Linh hoạt trong việc nhập liệu
+- Hiệu suất cao với độ phức tạp $O(n \log n)$
+- Quản lý bộ nhớ an toàn
+- Hỗ trợ nhiều phương thức nhập liệu
+
+## 5. Hạn Chế Và Phát Triển Tương Lai
+- Chưa hỗ trợ các ràng buộc phức tạp
+- Có thể mở rộng cho các thuật toán lập lịch khác
+- Cải thiện giao diện người dùng
+- Thêm chức năng phân tích chi tiết
 
 ## 5. Kết quả chương trình
 ### 5.1 Dữ liệu đầu vào
