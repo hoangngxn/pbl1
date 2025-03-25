@@ -14,11 +14,16 @@ Bài toán này có ứng dụng trong nhiều lĩnh vực thực tế như:
 ## 2. Cấu trúc dữ liệu, lý thuyết liên quan
 
 ### 2.1 Cấu trúc dữ liệu sử dụng
-- **Danh sách công việc**: Mỗi công việc được biểu diễn bởi một bộ ba gồm:
-  - Số thứ tự công việc.
-  - Thời gian thực hiện.
-  - Thời hạn hoàn thành.
-- **Danh sách lịch trình**: Lưu trữ các công việc đã được chọn để thực hiện đúng hạn.
+- **Cấu trúc Job**: Sử dụng struct để biểu diễn công việc với các thuộc tính:
+  ```c
+  typedef struct {
+      int job_id;
+      int processing_time;
+      int deadline;
+  } Job;
+  ```
+- **Mảng động**: Quản lý danh sách công việc và lịch trình
+- **Con trỏ**: Để quản lý bộ nhớ và thao tác hiệu quả với dữ liệu
 
 ### 2.2 Lý thuyết liên quan
 - **Thuật toán tham lam (Greedy Algorithm)**: Để đảm bảo số lượng công việc hoàn thành đúng hạn là lớn nhất, chúng ta sắp xếp công việc theo thời hạn hoàn thành và thực hiện lần lượt.
@@ -27,7 +32,7 @@ Bài toán này có ứng dụng trong nhiều lĩnh vực thực tế như:
 ## 3. Thuật toán
 ### 3.1 Ý tưởng thuật toán
 Thuật toán sử dụng chiến lược tham lam để sắp xếp và chọn công việc:
-1. Sắp xếp các công việc theo thời hạn hoàn thành tăng dần.
+1. Sắp xếp các công việc theo thời hạn hoàn thành tăng dần bằng hàm `qsort()`.
 2. Duyệt qua danh sách công việc đã sắp xếp và thêm vào lịch trình nếu tổng thời gian thực hiện không vượt quá thời hạn của công việc đó.
 3. Ghi nhận số lượng công việc được hoàn thành đúng hạn và trình tự thực hiện chúng.
 
@@ -41,39 +46,48 @@ Thuật toán sử dụng chiến lược tham lam để sắp xếp và chọn 
 - Số lượng công việc hoàn thành đúng hạn.
 - Danh sách trình tự thực hiện công việc.
 
-#### Pseudocode
-```
-Sắp xếp danh sách công việc theo thời hạn hoàn thành tăng dần
-current_time = 0
-completed_jobs = 0
-schedule = []
-
-For each công việc trong danh sách đã sắp xếp:
-    Nếu current_time + thời gian thực hiện ≤ thời hạn hoàn thành:
-        Thêm công việc vào schedule
-        Cập nhật current_time
-        Tăng biến đếm số công việc hoàn thành
-
-Trả về số lượng công việc hoàn thành đúng hạn và danh sách schedule
-```
-
-## 4. Đoạn chương trình hoặc hàm xử lý chính
-```python
-def schedule_jobs(n, p, d):
-    jobs = sorted(enumerate(zip(p, d), start=1), key=lambda x: x[1][1])  # Sắp xếp theo thời hạn hoàn thành
-    schedule = []
-    current_time = 0
-    completed_jobs = 0
+#### Hàm chính trong C
+```c
+void schedule_jobs(int n, int* processing_times, int* deadlines, 
+                   int* completed_jobs, int* schedule) {
+    // Tạo mảng các công việc
+    Job* jobs = malloc(n * sizeof(Job));
     
-    for job in jobs:
-        job_id, (processing_time, deadline) = job
-        if current_time + processing_time <= deadline:  # Nếu hoàn thành đúng hạn
-            schedule.append(job_id)
-            current_time += processing_time
-            completed_jobs += 1
-    
-    return completed_jobs, schedule
+    // Sắp xếp các công việc theo thời hạn
+    qsort(jobs, n, sizeof(Job), compare_jobs);
+
+    int current_time = 0;
+    int job_count = 0;
+
+    // Duyệt và lập lịch các công việc
+    for (int i = 0; i < n; i++) {
+        if (current_time + jobs[i].processing_time <= jobs[i].deadline) {
+            schedule[job_count] = jobs[i].job_id;
+            current_time += jobs[i].processing_time;
+            job_count++;
+        }
+    }
+
+    *completed_jobs = job_count;
+    free(jobs);
+}
 ```
+
+## 4. Giao diện và Chức Năng
+### 4.1 Menu Chính
+- Nhập thủ công thông tin công việc
+- Tải dữ liệu từ file .inp
+- Thoát chương trình
+
+### 4.2 Xử Lý Đầu Vào
+- Hỗ trợ nhập liệu từ bàn phím
+- Đọc file đầu vào với định dạng chuẩn
+- Kiểm tra tính hợp lệ của dữ liệu
+
+### 4.3 Xuất Kết Quả
+- Hiển thị số lượng công việc hoàn thành
+- Xuất danh sách công việc được thực hiện
+- Lưu kết quả vào file .out với tên chứa mốc thời gian
 
 ## 5. Kết quả chương trình
 ### 5.1 Dữ liệu đầu vào
@@ -91,10 +105,6 @@ LICHD.OUT:
 3 1 5
 ```
 
-### 5.3 Giao diện minh họa
-- **Tập tin đầu vào**: Chứa số lượng công việc, thời gian thực hiện và thời hạn hoàn thành.
-- **Tập tin đầu ra**: Hiển thị số lượng công việc hoàn thành đúng hạn và danh sách công việc được thực hiện.
-
 ## 6. Kết luận
 ### 6.1 Kết quả đạt được
 - Chương trình đã giải quyết bài toán lập lịch ưu tiên đúng hạn bằng thuật toán tham lam.
@@ -106,4 +116,8 @@ LICHD.OUT:
 - Cần cải tiến để áp dụng cho các hệ thống có ràng buộc phức tạp hơn.
 
 ## 7. Phụ lục: Chương trình nguồn
-(Toàn bộ mã nguồn của chương trình sẽ được đính kèm trong phần phụ lục.)
+Toàn bộ mã nguồn C được lưu trữ trong file `job_scheduler.c` với các chức năng chính:
+- Nhập và xử lý dữ liệu
+- Thuật toán lập lịch
+- Giao diện dòng lệnh thân thiện
+- Quản lý file đầu vào/đầu ra
